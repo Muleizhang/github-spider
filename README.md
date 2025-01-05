@@ -18,6 +18,13 @@ This project is an auto spider that collects a user's followers and followings o
     ```
 4. Run the script:
     ```
-    python github_spider.py <github_username>
+    python github_spider.py <github_username> <layers>
     ```
 5. The followers and followings data will be saved as `followers.json` and `followings.json` respectively in the project directory.
+
+## Example
+
+To recursively obtain a person's follower list and following list up to 2 layers, run the following command:
+```
+python github_spider.py octocat 2
+```
