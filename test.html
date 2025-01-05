@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+    background-color: #1e1e1e;
+    overflow: hidden;
+    }
+
+    text {
+    user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const data = {
+  "total_followers": {
+    "User1": ["User2", "User3", "User4"],
+    "User2": ["User5", "User6"],
+    "User3": ["User7", "User8", "User9"],
+    "User4": ["User10"],
+    "User5": ["User11", "User12"],
+    "User6": ["User13", "User14", "User15"],
+    "User7": ["User16", "User17"],
+    "User8": ["User18"],
+    "User9": ["User19", "User20"],
+    "User10": ["User21"],
+    "User11": ["User22", "User23", "User24"],
+    "User12": ["User25", "User26"],
+    "User13": ["User27"],
+    "User14": ["User28", "User29", "User30"],
+    "User15": ["User31"],
+    "User16": ["User32", "User33"],
+    "User17": ["User34"],
+    "User18": ["User35", "User36"],
+    "User19": ["User37", "User38"],
+    "User20": ["User39", "User40", "User41"],
+    "User21": ["User42"],
+    "User22": ["User43", "User44", "User45"],
+    "User23": ["User46"],
+    "User24": ["User47", "User48"],
+    "User25": ["User49", "User50"],
+    "User26": ["User51", "User52"],
+    "User27": ["User53"],
+    "User28": ["User54", "User55"],
+    "User29": ["User56"],
+    "User30": ["User57", "User58"]
+  }
+}
+;
+
+    const degreeCount = {};
+    for (const [key, followers] of Object.entries(data.total_followers)) {
+      degreeCount[key] = (degreeCount[key] || 0) + followers.length;
+      followers.forEach(follower => {
+        degreeCount[follower] = (degreeCount[follower] || 0) + 1;
+      });
+    }
+
+    const nodes = [];
+    const links = [];
+    const nodeSet = new Set();
+
+    for (const [key, followers] of Object.entries(data.total_followers)) {
+      if (!nodeSet.has(key)) {
+        nodes.push({ id: key, degree: degreeCount[key] });
+        nodeSet.add(key);
+      }
+      followers.forEach(follower => {
+        if (!nodeSet.has(follower)) {
+          nodes.push({ id: follower, degree: degreeCount[follower] });
+          nodeSet.add(follower);
+        }
+        links.push({ source: key, target: follower });
+      });
+    }
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links)
+        .id(d => d.id)
+        .distance(150) 
+        .strength(3)
+      )
+      .force("charge", d3.forceManyBody()
+        .strength(d => d.degree < 3 ? -100 : -100)
+      )
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .velocityDecay(0.4);
+
+    const link = svg.append("g")
+      .selectAll("line")
+      .data(links)
+      .enter().append("line")
+      .attr("stroke", "#999")
+      .attr("stroke-width", 1.5);
+
+    const node = svg.append("g")
+      .selectAll("circle")
+      .data(nodes)
+      .enter().append("circle")
+      .attr("r", d => d.degree < 3 ? 4 : 8) 
+      .attr("fill", d => d.degree < 3 ? "lightgray" : "gray") 
+      .call(drag(simulation));
+
+    const labels = svg.append("g")
+      .selectAll("text")
+      .data(nodes.filter(d => d.degree >= 3))
+      .enter().append("text")
+      .text(d => d.id)
+      .attr("font-size", "12px")
+      .attr("fill", "white")
+      .attr("text-anchor", "middle")
+      .attr("dy", -12)
+      .style("user-select", "none");
+
+    simulation.on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+
+      labels
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+    });
+
+    function drag(simulation) {
+      function dragstarted(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      }
+
+      function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      }
+
+      function dragended(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+      }
+
+      return d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended);
+    }
+  </script>
+</body>
+</html>

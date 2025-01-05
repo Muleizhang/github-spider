@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 import json
 import sys
 
+total_followers = {}
+total_followings = {}
+
 def get_followers(username, layers=1):
     url = f"https://github.com/{username}?tab=followers"
     response = requests.get(url)
@@ -10,6 +13,7 @@ def get_followers(username, layers=1):
     followers = []
     for follower in soup.find_all('span', class_='Link--secondary'):
         followers.append(follower.text.strip())
+    total_followers[username] = followers
     print("    followers of: ", username, followers[:5] if len(followers) > 5 else followers)
     print("    total followers: ", len(followers))
     print()
@@ -22,6 +26,7 @@ def get_followings(username, layers=1):
     followings = []
     for following in soup.find_all('span', class_='Link--secondary'):
         followings.append(following.text.strip())
+    total_followings[username] = followings
     print("    followings of: ", username, followings[:5] if len(followings) > 5 else followings)
     print("    total followings: ", len(followings))
     print()
@@ -30,24 +35,21 @@ def get_followings(username, layers=1):
 def get_recursive_followers(username, layers):
     print("layer: ",layers)
     if layers == 0:
-        return []
+        return
     followers = get_followers(username, layers)
-    all_followers = followers[:]
     if layers > 1:
         for follower in followers:
-            all_followers.extend(get_recursive_followers(follower, layers - 1))
-    return all_followers
+            get_recursive_followers(follower, layers - 1)
+
 
 def get_recursive_followings(username, layers):
     print("layer: ",layers)
     if layers == 0:
         return []
     followings = get_followings(username, layers)
-    all_followings = followings[:]
     if layers > 1:
         for following in followings:
-            all_followings.extend(get_recursive_followings(following, layers - 1))
-    return all_followings
+            get_recursive_followings(following, layers - 1)
 
 def save_as_json(data, filename):
     with open(filename, 'w') as f:
@@ -63,8 +65,12 @@ def main():
     followers = get_recursive_followers(username, layers)
     followings = get_recursive_followings(username, layers)
     
-    save_as_json(followers, 'followers.json')
-    save_as_json(followings, 'followings.json')
+    data = {
+        "total_followers": total_followers,
+        "total_followings": total_followings
+    }
+
+    save_as_json(data, 'data.json')
 
 if __name__ == "__main__":
     main()
