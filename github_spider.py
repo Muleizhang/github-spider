@@ -10,6 +10,9 @@ def get_followers(username, layers=1):
     followers = []
     for follower in soup.find_all('span', class_='Link--secondary'):
         followers.append(follower.text.strip())
+    print("    followers of: ", username, followers[:5] if len(followers) > 5 else followers)
+    print("    total followers: ", len(followers))
+    print()
     return followers
 
 def get_followings(username, layers=1):
@@ -19,24 +22,31 @@ def get_followings(username, layers=1):
     followings = []
     for following in soup.find_all('span', class_='Link--secondary'):
         followings.append(following.text.strip())
+    print("    followings of: ", username, followings[:5] if len(followings) > 5 else followings)
+    print("    total followings: ", len(followings))
+    print()
     return followings
 
 def get_recursive_followers(username, layers):
+    print("layer: ",layers)
     if layers == 0:
         return []
-    followers = get_followers(username)
+    followers = get_followers(username, layers)
     all_followers = followers[:]
-    for follower in followers:
-        all_followers.extend(get_recursive_followers(follower, layers - 1))
+    if layers > 1:
+        for follower in followers:
+            all_followers.extend(get_recursive_followers(follower, layers - 1))
     return all_followers
 
 def get_recursive_followings(username, layers):
+    print("layer: ",layers)
     if layers == 0:
         return []
-    followings = get_followings(username)
+    followings = get_followings(username, layers)
     all_followings = followings[:]
-    for following in followings:
-        all_followings.extend(get_recursive_followings(following, layers - 1))
+    if layers > 1:
+        for following in followings:
+            all_followings.extend(get_recursive_followings(following, layers - 1))
     return all_followings
 
 def save_as_json(data, filename):
